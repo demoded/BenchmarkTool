@@ -10,41 +10,41 @@ public class CodeGenerationService : ICodeGenerationService
 {
     /// <summary>
     /// Generates a complete benchmark class from user code
-  /// </summary>
+    /// </summary>
     public string GenerateBenchmarkClass(BenchmarkRequest request)
     {
         var sb = new StringBuilder();
-    
-    sb.AppendLine("using System;");
-     sb.AppendLine("using System.Collections.Generic;");
-      sb.AppendLine("using System.Linq;");
+
+        sb.AppendLine("using System;");
+        sb.AppendLine("using System.Collections.Generic;");
+        sb.AppendLine("using System.Linq;");
         sb.AppendLine("using System.Text;");
         sb.AppendLine("using BenchmarkDotNet.Attributes;");
         sb.AppendLine("using BenchmarkDotNet.Running;");
         sb.AppendLine();
- sb.AppendLine("namespace BenchmarkRunner;");
+        sb.AppendLine("namespace BenchmarkToolGenerated;");
         sb.AppendLine();
-   sb.AppendLine("[MemoryDiagnoser]");
+        sb.AppendLine("[MemoryDiagnoser]");
         sb.AppendLine("[RankColumn]");
         sb.AppendLine("public class DynamicBenchmark");
-   sb.AppendLine("{");
-     
+        sb.AppendLine("{");
+
         // Method A
-    sb.AppendLine("    [Benchmark(Baseline = true)]");
-sb.AppendLine($"    public void {SanitizeMethodName(request.MethodAName)}()");
+        sb.AppendLine("    [Benchmark(Baseline = true)]");
+        sb.AppendLine($"    public void {SanitizeMethodName(request.MethodAName)}()");
         sb.AppendLine("  {");
         sb.AppendLine(IndentCode(request.MethodACode, 8));
- sb.AppendLine("    }");
-sb.AppendLine();
-        
-   // Method B
-sb.AppendLine("    [Benchmark]");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Method B
+        sb.AppendLine("    [Benchmark]");
         sb.AppendLine($"    public void {SanitizeMethodName(request.MethodBName)}()");
-    sb.AppendLine("    {");
+        sb.AppendLine("    {");
         sb.AppendLine(IndentCode(request.MethodBCode, 8));
         sb.AppendLine("    }");
         sb.AppendLine("}");
-        
+
         return sb.ToString();
     }
 
@@ -54,30 +54,30 @@ sb.AppendLine("    [Benchmark]");
     public string GenerateProgramFile(BenchmarkRequest request)
     {
         var sb = new StringBuilder();
-        
-    sb.AppendLine("using BenchmarkDotNet.Running;");
+
+        sb.AppendLine("using BenchmarkDotNet.Running;");
         sb.AppendLine("using BenchmarkDotNet.Configs;");
         sb.AppendLine("using BenchmarkDotNet.Exporters;");
         sb.AppendLine("using BenchmarkDotNet.Exporters.Csv;");
         sb.AppendLine("using BenchmarkDotNet.Exporters.Json;");
         sb.AppendLine();
-     sb.AppendLine("namespace BenchmarkRunner;");
-     sb.AppendLine();
-  sb.AppendLine("public class Program");
+        sb.AppendLine("namespace BenchmarkToolGenerated;");
+        sb.AppendLine();
+        sb.AppendLine("public class Program");
         sb.AppendLine("{");
         sb.AppendLine("    public static void Main(string[] args)");
         sb.AppendLine("    {");
-    sb.AppendLine("        var config = DefaultConfig.Instance");
+        sb.AppendLine("        var config = DefaultConfig.Instance");
         sb.AppendLine("        .AddExporter(MarkdownExporter.GitHub)");
         sb.AppendLine("   .AddExporter(JsonExporter.Full)");
         sb.AppendLine("    .AddExporter(CsvExporter.Default);");
         sb.AppendLine();
-  sb.AppendLine("        var summary = BenchmarkRunner.Run<DynamicBenchmark>(config);");
+        sb.AppendLine("        var summary = BenchmarkRunner.Run<DynamicBenchmark>(config);");
         sb.AppendLine("  }");
-     sb.AppendLine("}");
-        
+        sb.AppendLine("}");
+
         return sb.ToString();
-  }
+    }
 
     /// <summary>
     /// Sanitizes method names to be valid C# identifiers
@@ -85,32 +85,32 @@ sb.AppendLine("    [Benchmark]");
     private string SanitizeMethodName(string methodName)
     {
         if (string.IsNullOrWhiteSpace(methodName))
-          return "Method";
-   
+            return "Method";
+
         // Remove invalid characters
-  var sanitized = new string(methodName
-          .Where(c => char.IsLetterOrDigit(c) || c == '_')
-          .ToArray());
-            
- // Ensure it starts with a letter or underscore
-   if (sanitized.Length == 0 || char.IsDigit(sanitized[0]))
+        var sanitized = new string(methodName
+                .Where(c => char.IsLetterOrDigit(c) || c == '_')
+                .ToArray());
+
+        // Ensure it starts with a letter or underscore
+        if (sanitized.Length == 0 || char.IsDigit(sanitized[0]))
             sanitized = "_" + sanitized;
-   
-  return string.IsNullOrWhiteSpace(sanitized) ? "Method" : sanitized;
+
+        return string.IsNullOrWhiteSpace(sanitized) ? "Method" : sanitized;
     }
 
-  /// <summary>
+    /// <summary>
     /// Indents code by the specified number of spaces
     /// </summary>
     private string IndentCode(string code, int spaces)
     {
         if (string.IsNullOrWhiteSpace(code))
-     return string.Empty;
-            
+            return string.Empty;
+
         var indent = new string(' ', spaces);
         var lines = code.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-        
-        return string.Join(Environment.NewLine, 
+
+        return string.Join(Environment.NewLine,
             lines.Select(line => string.IsNullOrWhiteSpace(line) ? line : indent + line));
     }
 }
