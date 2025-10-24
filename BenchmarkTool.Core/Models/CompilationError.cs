@@ -5,8 +5,8 @@ namespace BenchmarkTool.Core.Models;
 /// </summary>
 public class CompilationError
 {
-/// <summary>
-  /// Line number where error occurred
+    /// <summary>
+    /// Line number where error occurred
     /// </summary>
     public int Line { get; set; }
 

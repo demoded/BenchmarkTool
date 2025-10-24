@@ -8,12 +8,12 @@ public class BenchmarkRequest
     /// <summary>
     /// Source code for Method A
     /// </summary>
-  public string MethodACode { get; set; } = string.Empty;
+    public string MethodACode { get; set; } = string.Empty;
 
     /// <summary>
     /// Source code for Method B
     /// </summary>
-  public string MethodBCode { get; set; } = string.Empty;
+    public string MethodBCode { get; set; } = string.Empty;
 
     /// <summary>
     /// Optional name for Method A

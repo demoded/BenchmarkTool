@@ -20,7 +20,7 @@ public class BenchmarkHub : Hub
     /// </summary>
     public async Task SendStatus(string status)
     {
-     await Clients.All.SendAsync("ReceiveStatus", status);
+        await Clients.All.SendAsync("ReceiveStatus", status);
     }
 
     /// <summary>

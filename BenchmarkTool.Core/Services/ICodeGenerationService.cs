@@ -15,5 +15,5 @@ public interface ICodeGenerationService
     /// <summary>
     /// Generates a complete Program.cs for the benchmark runner
     /// </summary>
- string GenerateProgramFile(BenchmarkRequest request);
+    string GenerateProgramFile(BenchmarkRequest request);
 }

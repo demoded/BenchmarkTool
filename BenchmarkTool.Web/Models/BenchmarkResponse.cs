@@ -10,7 +10,7 @@ public class BenchmarkResponse
     /// </summary>
     public bool Success { get; set; }
 
- /// <summary>
+    /// <summary>
     /// Error message if benchmark failed
     /// </summary>
     public string? ErrorMessage { get; set; }
@@ -59,7 +59,7 @@ public class CompilationError
     /// <summary>
     /// Error message
     /// </summary>
-public string Message { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
 
     /// <summary>
     /// Error severity (Error, Warning, Info)

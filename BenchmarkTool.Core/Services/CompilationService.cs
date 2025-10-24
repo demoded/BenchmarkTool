@@ -1,7 +1,6 @@
 using BenchmarkTool.Core.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Text;
 using System.Reflection;
 
 namespace BenchmarkTool.Core.Services;
@@ -128,8 +127,8 @@ public class CompilationService : ICompilationService
     {
         var assemblyName = $"DynamicBenchmark_{Guid.NewGuid():N}";
 
-      // Get references to required assemblies
-      var references = new List<MetadataReference>
+        // Get references to required assemblies
+        var references = new List<MetadataReference>
         {
       MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
           MetadataReference.CreateFromFile(typeof(Console).Assembly.Location),
@@ -141,24 +140,24 @@ public class CompilationService : ICompilationService
         };
 
         // Add BenchmarkDotNet reference - use multiple approaches to find it
-      if (!TryAddBenchmarkDotNetReference(references))
+        if (!TryAddBenchmarkDotNetReference(references))
         {
             throw new InvalidOperationException("BenchmarkDotNet assembly could not be loaded. Ensure it is referenced in the project.");
         }
 
         // Add reference to netstandard if available
-  try
+        try
         {
-    var netstandardPath = Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location)!, "netstandard.dll");
-       if (File.Exists(netstandardPath))
-  {
-       references.Add(MetadataReference.CreateFromFile(netstandardPath));
-      }
+            var netstandardPath = Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location)!, "netstandard.dll");
+            if (File.Exists(netstandardPath))
+            {
+                references.Add(MetadataReference.CreateFromFile(netstandardPath));
+            }
         }
         catch
-  {
-    // netstandard not available
-     }
+        {
+            // netstandard not available
+        }
 
         var compilation = CSharpCompilation.Create(
       assemblyName,
@@ -176,54 +175,54 @@ new[] { syntaxTree },
     /// </summary>
     private bool TryAddBenchmarkDotNetReference(List<MetadataReference> references)
     {
-     // Approach 1: Try to load from already loaded assemblies
-     try
- {
- var loadedAssembly = AppDomain.CurrentDomain.GetAssemblies()
-     .FirstOrDefault(a => a.GetName().Name == "BenchmarkDotNet");
-
-   if (loadedAssembly != null && !string.IsNullOrEmpty(loadedAssembly.Location))
-     {
-        references.Add(MetadataReference.CreateFromFile(loadedAssembly.Location));
-      return true;
-            }
-     }
-        catch { }
-
-    // Approach 2: Try to load the assembly explicitly
-  try
+        // Approach 1: Try to load from already loaded assemblies
+        try
         {
-            var benchmarkDotNetAssembly = Assembly.Load("BenchmarkDotNet");
-   if (!string.IsNullOrEmpty(benchmarkDotNetAssembly.Location))
- {
-      references.Add(MetadataReference.CreateFromFile(benchmarkDotNetAssembly.Location));
-           return true;
-    }
+            var loadedAssembly = AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name == "BenchmarkDotNet");
+
+            if (loadedAssembly != null && !string.IsNullOrEmpty(loadedAssembly.Location))
+            {
+                references.Add(MetadataReference.CreateFromFile(loadedAssembly.Location));
+                return true;
+            }
         }
         catch { }
 
-     // Approach 3: Try LoadFrom with the assembly name
-      try
-   {
-        var benchmarkDotNetAssembly = Assembly.Load(new AssemblyName("BenchmarkDotNet"));
-      if (!string.IsNullOrEmpty(benchmarkDotNetAssembly.Location))
-         {
-     references.Add(MetadataReference.CreateFromFile(benchmarkDotNetAssembly.Location));
-return true;
+        // Approach 2: Try to load the assembly explicitly
+        try
+        {
+            var benchmarkDotNetAssembly = Assembly.Load("BenchmarkDotNet");
+            if (!string.IsNullOrEmpty(benchmarkDotNetAssembly.Location))
+            {
+                references.Add(MetadataReference.CreateFromFile(benchmarkDotNetAssembly.Location));
+                return true;
             }
-  }
+        }
         catch { }
 
-      // Approach 4: Search in the application base directory
-  try
+        // Approach 3: Try LoadFrom with the assembly name
+        try
         {
-    var appDir = AppContext.BaseDirectory;
-        var benchmarkDllPath = Path.Combine(appDir, "BenchmarkDotNet.dll");
+            var benchmarkDotNetAssembly = Assembly.Load(new AssemblyName("BenchmarkDotNet"));
+            if (!string.IsNullOrEmpty(benchmarkDotNetAssembly.Location))
+            {
+                references.Add(MetadataReference.CreateFromFile(benchmarkDotNetAssembly.Location));
+                return true;
+            }
+        }
+        catch { }
 
-         if (File.Exists(benchmarkDllPath))
+        // Approach 4: Search in the application base directory
+        try
         {
-  references.Add(MetadataReference.CreateFromFile(benchmarkDllPath));
-            return true;
+            var appDir = AppContext.BaseDirectory;
+            var benchmarkDllPath = Path.Combine(appDir, "BenchmarkDotNet.dll");
+
+            if (File.Exists(benchmarkDllPath))
+            {
+                references.Add(MetadataReference.CreateFromFile(benchmarkDllPath));
+                return true;
             }
         }
         catch { }
@@ -231,18 +230,18 @@ return true;
         // Approach 5: Load from the executing assembly's location
         try
         {
-      var executingAssemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-          if (executingAssemblyDir != null)
+            var executingAssemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            if (executingAssemblyDir != null)
             {
-       var benchmarkDllPath = Path.Combine(executingAssemblyDir, "BenchmarkDotNet.dll");
+                var benchmarkDllPath = Path.Combine(executingAssemblyDir, "BenchmarkDotNet.dll");
 
-    if (File.Exists(benchmarkDllPath))
-        {
-references.Add(MetadataReference.CreateFromFile(benchmarkDllPath));
-  return true;
-        }
+                if (File.Exists(benchmarkDllPath))
+                {
+                    references.Add(MetadataReference.CreateFromFile(benchmarkDllPath));
+                    return true;
+                }
             }
-  }
+        }
         catch { }
 
         return false;

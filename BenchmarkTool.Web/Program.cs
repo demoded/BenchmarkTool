@@ -1,5 +1,5 @@
-using BenchmarkTool.Web.Hubs;
 using BenchmarkTool.Core.Services;
+using BenchmarkTool.Web.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 

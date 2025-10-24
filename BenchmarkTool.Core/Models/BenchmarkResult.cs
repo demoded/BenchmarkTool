@@ -42,6 +42,6 @@ public class BenchmarkResult
 
     /// <summary>
     /// Path to the temporary directory used for benchmarking
-  /// </summary>
+    /// </summary>
     public string? TempDirectory { get; set; }
 }

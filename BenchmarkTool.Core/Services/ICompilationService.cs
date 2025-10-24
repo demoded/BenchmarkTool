@@ -12,7 +12,7 @@ public interface ICompilationService
     /// </summary>
     Task<(bool IsValid, List<CompilationError> Errors)> ValidateCodeAsync(string code);
 
- /// <summary>
+    /// <summary>
     /// Compiles the code and checks for errors
     /// </summary>
     Task<(bool Success, List<CompilationError> Errors)> CompileCodeAsync(string code, string outputPath);
