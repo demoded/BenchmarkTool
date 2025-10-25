@@ -69,10 +69,10 @@ for (int i = 0; i < 1000; i++)
 
             // Create progress reporter that sends updates via SignalR
             var progress = new Progress<(string Message, int Percentage)>(update =>
-                 {
-                     _hubContext.Clients.All.SendAsync("ReceiveProgress", update.Message, update.Percentage);
-                     _logger.LogInformation("Progress: {Message} - {Percentage}%", update.Message, update.Percentage);
-                 });
+            {
+                _hubContext.Clients.All.SendAsync("ReceiveProgress", update.Message, update.Percentage);
+                _logger.LogInformation("Progress: {Message} - {Percentage}%", update.Message, update.Percentage);
+            });
 
             // Run the benchmark
             var result = await _benchmarkRunner.RunBenchmarkAsync(coreRequest, progress);
