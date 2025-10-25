@@ -304,7 +304,7 @@ public class BenchmarkRunnerService : IBenchmarkRunnerService
     }
 
     /// <summary>
-    /// Parses markdown results from BenchmarkDotNet output
+    /// Parses results content preferring HTML, then Markdown
     /// </summary>
     private async Task<string?> ParseMarkdownResultsAsync(string tempDir)
     {
@@ -314,11 +314,26 @@ public class BenchmarkRunnerService : IBenchmarkRunnerService
             if (!Directory.Exists(resultsDir))
                 return null;
 
-            var mdFiles = Directory.GetFiles(resultsDir, "*-report-github.md");
-            if (mdFiles.Length == 0)
-                return null;
+            // Prefer HTML report if available
+            string? content = null;
+            string[] patterns = new[]
+            {
+                "*-report.html", // HtmlExporter.Default
+                "*-report-github.md" // fallback to markdown
+            };
 
-            return await File.ReadAllTextAsync(mdFiles[0]);
+            foreach (var pattern in patterns)
+            {
+                var files = Directory.GetFiles(resultsDir, pattern);
+                if (files.Length > 0)
+                {
+                    content = await File.ReadAllTextAsync(files[0]);
+                    if (!string.IsNullOrWhiteSpace(content))
+                        return content;
+                }
+            }
+
+            return null;
         }
         catch
         {
