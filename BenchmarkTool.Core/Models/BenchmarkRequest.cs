@@ -6,6 +6,11 @@ namespace BenchmarkTool.Core.Models;
 public class BenchmarkRequest
 {
     /// <summary>
+    /// Optional setup code executed once before benchmarks
+    /// </summary>
+    public string SetupCode { get; set; } = string.Empty;
+
+    /// <summary>
     /// Source code for Method A
     /// </summary>
     public string MethodACode { get; set; } = string.Empty;

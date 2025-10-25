@@ -32,16 +32,20 @@ public class BenchmarkModel : PageModel
     public void OnGet()
     {
         // Initialize with sample code
+        Request.SetupCode = @"// Sample Setup
+// Runs once before benchmarks
+// Declare fields at class scope to share data between methods.";
+
         Request.MethodACode = @"// Sample Method A
 var list = new List<int>();
-for (int i = 0; i < 1000; i++)
+for (int i =0; i <1000; i++)
 {
     list.Add(i);
 }";
 
         Request.MethodBCode = @"// Sample Method B
 var array = new int[1000];
-for (int i = 0; i < 1000; i++)
+for (int i =0; i <1000; i++)
 {
     array[i] = i;
 }";
@@ -61,6 +65,7 @@ for (int i = 0; i < 1000; i++)
             // Convert Web model to Core model
             var coreRequest = new CoreModels.BenchmarkRequest
             {
+                SetupCode = Request.SetupCode,
                 MethodACode = Request.MethodACode,
                 MethodBCode = Request.MethodBCode,
                 MethodAName = Request.MethodAName,

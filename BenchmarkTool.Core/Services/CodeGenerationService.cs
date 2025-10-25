@@ -29,6 +29,17 @@ public class CodeGenerationService : ICodeGenerationService
         sb.AppendLine("public class DynamicBenchmark");
         sb.AppendLine("{");
 
+        // Global setup method if provided
+        if (!string.IsNullOrWhiteSpace(request.SetupCode))
+        {
+            sb.AppendLine("    [GlobalSetup]");
+            sb.AppendLine("    public void Setup()");
+            sb.AppendLine("    {");
+            sb.AppendLine(IndentCode(request.SetupCode, 8));
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
         // Method A
         sb.AppendLine("    [Benchmark(Baseline = true)]");
         sb.AppendLine($"    public void {SanitizeMethodName(request.MethodAName)}()");

@@ -15,6 +15,23 @@
 	</div>
 
 	<form method="post" id="benchmarkForm">
+		<!-- Setup Editor Row -->
+		<div class="row mb-3">
+			<div class="col">
+				<div class="card h-100">
+					<div class="card-header bg-info text-white">
+						<h5 class="mb-0">
+							<i class="bi bi-tools"></i> Setup
+						</h5>
+					</div>
+					<div class="card-body p-0">
+						<div id="editorSetup" style="height:250px; border:1px solid #ddd;"></div>
+						<input type="hidden" asp-for="Request.SetupCode" id="setupCode" />
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<div class="row mb-3">
 			<div class="col-md-6">
 				<div class="card h-100">
@@ -143,7 +160,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 
 	<script>
-		 let editorA, editorB;
+		 let editorSetup, editorA, editorB;
 		 let connection;
 
 		 // Initialize SignalR connection (global provided by script tag above)
@@ -190,6 +207,18 @@
 		 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 
 		 require(['vs/editor/editor.main'], function () {
+		 // Setup Editor
+		 editorSetup = monaco.editor.create(document.getElementById('editorSetup'), {
+		 value: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Request.SetupCode)),
+		 language: 'csharp',
+		 theme: 'vs-dark',
+		 minimap: { enabled: false },
+		 automaticLayout: true,
+		 fontSize:14,
+		 lineNumbers: 'on',
+		 scrollBeyondLastLine: false
+		 });
+
 		 // Editors
 		 editorA = monaco.editor.create(document.getElementById('editorA'), {
 		 value: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Request.MethodACode)),
@@ -220,6 +249,7 @@
 		 // Form submission
 		 document.getElementById('benchmarkForm').addEventListener('submit', function (e) {
 		 // Update hidden fields with editor content
+		 document.getElementById('setupCode').value = editorSetup.getValue();
 		 document.getElementById('methodACode').value = editorA.getValue();
 		 document.getElementById('methodBCode').value = editorB.getValue();
 
@@ -231,6 +261,8 @@
 
 		 // Reset button
 		 document.getElementById('resetEditors').addEventListener('click', function () {
+		 editorSetup.setValue(`// Sample Setup\n// Runs once before benchmarks (allocate shared data, etc.)\nvar seed =42;\nvar random = new Random(seed);`);
+
 		 editorA.setValue(`// Sample Method A
 		var list = new List<int>();
 		for (int i =0; i <1000; i++)
