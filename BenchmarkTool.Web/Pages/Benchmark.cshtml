@@ -15,6 +15,23 @@
 	</div>
 
 	<form method="post" id="benchmarkForm">
+		<!-- Declarations Editor Row -->
+		<div class="row mb-3">
+			<div class="col">
+				<div class="card h-100">
+					<div class="card-header bg-secondary text-white">
+						<h5 class="mb-0">
+							<i class="bi bi-braces"></i> Variables and declarations
+						</h5>
+					</div>
+					<div class="card-body p-0">
+						<div id="editorDeclarations" style="height:100px; border:1px solid #ddd;"></div>
+						<input type="hidden" asp-for="Request.DeclarationsCode" id="declarationsCode" />
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<!-- Setup Editor Row -->
 		<div class="row mb-3">
 			<div class="col">
@@ -25,7 +42,7 @@
 						</h5>
 					</div>
 					<div class="card-body p-0">
-						<div id="editorSetup" style="height:250px; border:1px solid #ddd;"></div>
+						<div id="editorSetup" style="height:100px; border:1px solid #ddd;"></div>
 						<input type="hidden" asp-for="Request.SetupCode" id="setupCode" />
 					</div>
 				</div>
@@ -41,7 +58,7 @@
 						</h5>
 					</div>
 					<div class="card-body p-0">
-						<div id="editorA" style="height:400px; border:1px solid #ddd;"></div>
+						<div id="editorA" style="height:200px; border:1px solid #ddd;"></div>
 						<input type="hidden" asp-for="Request.MethodACode" id="methodACode" />
 					</div>
 				</div>
@@ -54,7 +71,7 @@
 						</h5>
 					</div>
 					<div class="card-body p-0">
-						<div id="editorB" style="height:400px; border:1px solid #ddd;"></div>
+						<div id="editorB" style="height:200px; border:1px solid #ddd;"></div>
 						<input type="hidden" asp-for="Request.MethodBCode" id="methodBCode" />
 					</div>
 				</div>
@@ -160,7 +177,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 
 	<script>
-		 let editorSetup, editorA, editorB;
+		 let editorDeclarations, editorSetup, editorA, editorB;
 		 let connection;
 
 		 // Initialize SignalR connection (global provided by script tag above)
@@ -207,6 +224,18 @@
 		 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 
 		 require(['vs/editor/editor.main'], function () {
+		 // Declarations Editor
+		 editorDeclarations = monaco.editor.create(document.getElementById('editorDeclarations'), {
+		 value: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Request.DeclarationsCode)),
+		 language: 'csharp',
+		 theme: 'vs-dark',
+		 minimap: { enabled: false },
+		 automaticLayout: true,
+		 fontSize:14,
+		 lineNumbers: 'on',
+		 scrollBeyondLastLine: false
+		 });
+
 		 // Setup Editor
 		 editorSetup = monaco.editor.create(document.getElementById('editorSetup'), {
 		 value: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Request.SetupCode)),
@@ -249,6 +278,7 @@
 		 // Form submission
 		 document.getElementById('benchmarkForm').addEventListener('submit', function (e) {
 		 // Update hidden fields with editor content
+		 document.getElementById('declarationsCode').value = editorDeclarations.getValue();
 		 document.getElementById('setupCode').value = editorSetup.getValue();
 		 document.getElementById('methodACode').value = editorA.getValue();
 		 document.getElementById('methodBCode').value = editorB.getValue();
@@ -261,21 +291,23 @@
 
 		 // Reset button
 		 document.getElementById('resetEditors').addEventListener('click', function () {
-		 editorSetup.setValue(`// Sample Setup\n// Runs once before benchmarks (allocate shared data, etc.)\nvar seed =42;\nvar random = new Random(seed);`);
+		 editorDeclarations.setValue(`// Sample Declarations\nprivate int size;`);
+
+		 editorSetup.setValue(`// Sample Setup\n// Runs once before benchmarks (allocate shared data, etc.)\nsize = 1000;`);
 
 		 editorA.setValue(`// Sample Method A
-		var list = new List<int>();
-		for (int i =0; i <1000; i++)
-		{
-		 list.Add(i);
-		}`);
+var list = new List<int>();
+for (int i =0; i <size; i++)
+{
+	list.Add(i);
+}`);
 
 		 editorB.setValue(`// Sample Method B
-		var array = new int[1000];
-		for (int i =0; i <1000; i++)
-		{
-		 array[i] = i;
-		}`);
+var array = new int[size];
+for (int i =0; i <size; i++)
+{
+	array[i] = i;
+}`);
 		 });
 	</script>
 }

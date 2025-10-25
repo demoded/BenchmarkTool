@@ -6,6 +6,11 @@ namespace BenchmarkTool.Web.Models;
 public class BenchmarkRequest
 {
     /// <summary>
+    /// Optional variables and class-level declarations inside the benchmark class
+    /// </summary>
+    public string DeclarationsCode { get; set; } = string.Empty;
+
+    /// <summary>
     /// Optional setup code executed once before benchmarks
     /// </summary>
     public string SetupCode { get; set; } = string.Empty;

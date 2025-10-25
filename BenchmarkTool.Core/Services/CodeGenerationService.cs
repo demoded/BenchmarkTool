@@ -29,6 +29,13 @@ public class CodeGenerationService : ICodeGenerationService
         sb.AppendLine("public class DynamicBenchmark");
         sb.AppendLine("{");
 
+        // Class-level declarations
+        if (!string.IsNullOrWhiteSpace(request.DeclarationsCode))
+        {
+            sb.AppendLine(IndentCode(request.DeclarationsCode, 4));
+            sb.AppendLine();
+        }
+
         // Global setup method if provided
         if (!string.IsNullOrWhiteSpace(request.SetupCode))
         {
