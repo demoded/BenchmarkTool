@@ -174,8 +174,7 @@
 
  connection.on("ReceiveResults", function (results) {
  document.getElementById('progressSection').style.display = 'none';
- // Reload page to show results
- location.reload();
+ // Do not reload here. The POST response will render results on the page.
  });
 
  connection.start()
