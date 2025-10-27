@@ -93,6 +93,12 @@ for (int i =0; i <size; i++)
                 _logger.LogInformation("[Conn {Conn}] Progress: {Message} - {Percentage}%", ConnectionId, update.Message, update.Percentage);
             });
 
+            // If someone else is running, inform this client that it's queued (simple status message)
+            if (!string.IsNullOrWhiteSpace(ConnectionId) && (_concurrency.IsRunning || _concurrency.WaitingCount >0))
+            {
+                await _hubContext.Clients.Client(ConnectionId).SendAsync("ReceiveStatus", "Another benchmark is running. You are queued and will start automatically...");
+            }
+
             // Acquire exclusive run slot; this may wait and will report waiting status
             await using var runnerLock = await AcquireRunnerSlotAsync(progress);
 

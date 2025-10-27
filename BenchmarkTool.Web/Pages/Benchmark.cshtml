@@ -97,6 +97,9 @@
 			<div class="card">
 				<div class="card-body">
 					<h5><i class="bi bi-hourglass-split"></i> Running Benchmark...</h5>
+					<div id="queuedNote" class="alert alert-info py-2 px-3" style="display:none;">
+						<i class="bi bi-info-circle"></i> Another benchmark is running. You are queued and will start automatically...
+					</div>
 					<div class="progress mb-2">
 						<div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
 							 role="progressbar" style="width:0%"></div>
@@ -197,6 +200,8 @@
 		 // Only show progress UI when actual run starts (>=10%)
 		 if (percentage >=10) {
 		 const progressSection = document.getElementById('progressSection');
+		 const queued = document.getElementById('queuedNote');
+		 if (queued) queued.style.display = 'none';
 		 if (progressSection.style.display === 'none') {
 		 progressSection.style.display = 'block';
 		 }
@@ -206,8 +211,16 @@
 		 });
 
 		 connection.on("ReceiveStatus", function (status) {
-		 // No-op for now; we avoid showing progress while waiting in queue
-		 console.log('Status:', status);
+		 // Easiest way: show a small info note while queued
+		 const progressSection = document.getElementById('progressSection');
+		 const queued = document.getElementById('queuedNote');
+		 if (queued) {
+		 queued.textContent = status;
+		 queued.style.display = 'block';
+		 }
+		 if (progressSection.style.display === 'none') {
+		 progressSection.style.display = 'block';
+		 }
 		 });
 
 		 connection.on("ReceiveError", function (error) {
@@ -305,7 +318,7 @@
 		 connIdInput.value = connection.connectionId || connIdInput.value || '';
 		 }
 
-		 // Do not show progress yet; wait for server to begin the actual run
+		 // Do not show progress yet; wait for server to show queued note or progress
 		 });
 
 		 // Reset button
