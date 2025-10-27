@@ -1,5 +1,6 @@
 using BenchmarkTool.Core.Services;
 using BenchmarkTool.Web.Hubs;
+using BenchmarkTool.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,9 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<ICodeGenerationService, CodeGenerationService>();
 builder.Services.AddScoped<ICompilationService, CompilationService>();
 builder.Services.AddScoped<IBenchmarkRunnerService, BenchmarkRunnerService>();
+
+// Concurrency: allow only one benchmark at a time across the app
+builder.Services.AddSingleton<IBenchmarkConcurrencyService, BenchmarkConcurrencyService>();
 
 var app = builder.Build();
 

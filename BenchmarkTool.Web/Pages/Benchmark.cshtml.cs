@@ -1,6 +1,7 @@
 using BenchmarkTool.Core.Services;
 using BenchmarkTool.Web.Hubs;
 using BenchmarkTool.Web.Models;
+using BenchmarkTool.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR;
@@ -13,19 +14,25 @@ public class BenchmarkModel : PageModel
     private readonly ILogger<BenchmarkModel> _logger;
     private readonly IBenchmarkRunnerService _benchmarkRunner;
     private readonly IHubContext<BenchmarkHub> _hubContext;
+    private readonly IBenchmarkConcurrencyService _concurrency;
 
     public BenchmarkModel(
      ILogger<BenchmarkModel> logger,
         IBenchmarkRunnerService benchmarkRunner,
-        IHubContext<BenchmarkHub> hubContext)
+        IHubContext<BenchmarkHub> hubContext,
+        IBenchmarkConcurrencyService concurrency)
     {
         _logger = logger;
         _benchmarkRunner = benchmarkRunner;
         _hubContext = hubContext;
+        _concurrency = concurrency;
     }
 
     [BindProperty]
     public new BenchmarkRequest Request { get; set; } = new();
+
+    [BindProperty]
+    public string? ConnectionId { get; set; }
 
     public new BenchmarkResponse? Response { get; set; }
 
@@ -37,7 +44,7 @@ private int size;";
 
         Request.SetupCode = @"// Sample Setup
 // Runs once before benchmarks
-size = 1000;";
+size =1000;";
 
         Request.MethodACode = @"// Sample Method A
 var list = new List<int>();
@@ -63,7 +70,7 @@ for (int i =0; i <size; i++)
 
         try
         {
-            _logger.LogInformation("Starting benchmark run for request {RunId}", Request.MethodAName);
+            _logger.LogInformation("Starting benchmark run for request {RunId}. ConnId={ConnId}", Request.MethodAName, ConnectionId);
 
             // Convert Web model to Core model
             var coreRequest = new CoreModels.BenchmarkRequest
@@ -76,12 +83,18 @@ for (int i =0; i <size; i++)
                 MethodBName = Request.MethodBName
             };
 
-            // Create progress reporter that sends updates via SignalR
+            // Create progress reporter that sends updates via SignalR ONLY to the initiating connection
             var progress = new Progress<(string Message, int Percentage)>(update =>
             {
-                _hubContext.Clients.All.SendAsync("ReceiveProgress", update.Message, update.Percentage);
-                _logger.LogInformation("Progress: {Message} - {Percentage}%", update.Message, update.Percentage);
+                if (!string.IsNullOrWhiteSpace(ConnectionId))
+                {
+                    _hubContext.Clients.Client(ConnectionId).SendAsync("ReceiveProgress", update.Message, update.Percentage);
+                }
+                _logger.LogInformation("[Conn {Conn}] Progress: {Message} - {Percentage}%", ConnectionId, update.Message, update.Percentage);
             });
+
+            // Acquire exclusive run slot; this may wait and will report waiting status
+            await using var runnerLock = await AcquireRunnerSlotAsync(progress);
 
             // Run the benchmark
             var result = await _benchmarkRunner.RunBenchmarkAsync(coreRequest, progress);
@@ -105,14 +118,17 @@ for (int i =0; i <size; i++)
                 ExecutionTimeMs = result.ExecutionTimeMs
             };
 
-            // Send completion notification via SignalR
-            if (result.Success)
+            // Send completion notification via SignalR to ONLY this client
+            if (!string.IsNullOrWhiteSpace(ConnectionId))
             {
-                await _hubContext.Clients.All.SendAsync("ReceiveResults", "Benchmark completed successfully!");
-            }
-            else
-            {
-                await _hubContext.Clients.All.SendAsync("ReceiveError", result.ErrorMessage ?? "Benchmark failed");
+                if (result.Success)
+                {
+                    await _hubContext.Clients.Client(ConnectionId).SendAsync("ReceiveResults", "Benchmark completed successfully!");
+                }
+                else
+                {
+                    await _hubContext.Clients.Client(ConnectionId).SendAsync("ReceiveError", result.ErrorMessage ?? "Benchmark failed");
+                }
             }
 
             // Clean up temporary files after a delay
@@ -140,9 +156,31 @@ for (int i =0; i <size; i++)
                 ErrorMessage = $"Unexpected error: {ex.Message}"
             };
 
-            await _hubContext.Clients.All.SendAsync("ReceiveError", ex.Message);
+            if (!string.IsNullOrWhiteSpace(ConnectionId))
+            {
+                await _hubContext.Clients.Client(ConnectionId).SendAsync("ReceiveError", ex.Message);
+            }
 
             return Page();
+        }
+    }
+
+    private async ValueTask<IAsyncDisposable> AcquireRunnerSlotAsync(IProgress<(string Message, int Percentage)> progress)
+    {
+        // Wrap IDisposable as IAsyncDisposable for convenient await using in handler
+        var releaser = await _concurrency.AcquireAsync(progress, HttpContext.RequestAborted);
+        return new AsyncDisposableAdapter(releaser);
+    }
+
+    private sealed class AsyncDisposableAdapter : IAsyncDisposable
+    {
+        private IDisposable? _inner;
+        public AsyncDisposableAdapter(IDisposable inner) => _inner = inner;
+        public ValueTask DisposeAsync()
+        {
+            var inner = Interlocked.Exchange(ref _inner, null);
+            inner?.Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }

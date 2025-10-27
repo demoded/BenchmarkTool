@@ -15,6 +15,7 @@
 	</div>
 
 	<form method="post" id="benchmarkForm">
+		<input type="hidden" asp-for="ConnectionId" id="connectionId" />
 		<!-- Declarations Editor Row -->
 		<div class="row mb-3">
 			<div class="col">
@@ -80,7 +81,7 @@
 
 		<div class="row mb-3">
 			<div class="col text-center">
-				<button type="submit" class="btn btn-primary btn-lg" id="runBenchmark">
+				<button type="submit" class="btn btn-primary btn-lg" id="runBenchmark" disabled>
 					<i class="bi bi-play-fill"></i> Run Benchmark
 				</button>
 				<button type="button" class="btn btn-secondary btn-lg" id="resetEditors">
@@ -193,12 +194,20 @@
 		 .build();
 
 		 connection.on("ReceiveProgress", function (message, percentage) {
+		 // Only show progress UI when actual run starts (>=10%)
+		 if (percentage >=10) {
+		 const progressSection = document.getElementById('progressSection');
+		 if (progressSection.style.display === 'none') {
+		 progressSection.style.display = 'block';
+		 }
 		 document.getElementById('progressBar').style.width = percentage + '%';
 		 document.getElementById('progressMessage').textContent = message;
+		 }
 		 });
 
 		 connection.on("ReceiveStatus", function (status) {
-		 document.getElementById('progressMessage').textContent = status;
+		 // No-op for now; we avoid showing progress while waiting in queue
+		 console.log('Status:', status);
 		 });
 
 		 connection.on("ReceiveError", function (error) {
@@ -214,6 +223,13 @@
 		 connection.start()
 		 .then(function () {
 		 console.log('SignalR connected');
+		 // Attach current connection ID to the form
+		 const connIdInput = document.getElementById('connectionId');
+		 if (connIdInput) {
+		 connIdInput.value = connection.connectionId || '';
+		 }
+		 // Enable Run button only after SignalR is ready to receive targeted messages
+		 document.getElementById('runBenchmark').disabled = false;
 		 })
 		 .catch(function (err) {
 		 console.error('SignalR connection error: ', err);
@@ -283,17 +299,20 @@
 		 document.getElementById('methodACode').value = editorA.getValue();
 		 document.getElementById('methodBCode').value = editorB.getValue();
 
-		 // Show progress
-		 document.getElementById('progressSection').style.display = 'block';
-		 document.getElementById('progressBar').style.width = '10%';
-		 document.getElementById('progressMessage').textContent = 'Submitting benchmark request...';
+		 // Refresh connection id in case it changed due to reconnect
+		 const connIdInput = document.getElementById('connectionId');
+		 if (connIdInput) {
+		 connIdInput.value = connection.connectionId || connIdInput.value || '';
+		 }
+
+		 // Do not show progress yet; wait for server to begin the actual run
 		 });
 
 		 // Reset button
 		 document.getElementById('resetEditors').addEventListener('click', function () {
 		 editorDeclarations.setValue(`// Sample Declarations\nprivate int size;`);
 
-		 editorSetup.setValue(`// Sample Setup\n// Runs once before benchmarks (allocate shared data, etc.)\nsize = 1000;`);
+		 editorSetup.setValue(`// Sample Setup\n// Runs once before benchmarks (allocate shared data, etc.)\nsize =1000;`);
 
 		 editorA.setValue(`// Sample Method A
 var list = new List<int>();
